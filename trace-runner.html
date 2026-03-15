@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Trace Runner | CSK Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;background:#07111e;color:#e8f4ff;
+  font-family:'Exo 2',sans-serif;overflow:hidden;touch-action:none;user-select:none;}
+#hdr{position:fixed;top:0;left:0;right:0;height:48px;background:#0a1520;
+  border-bottom:1px solid #1a3a5c;display:flex;align-items:center;
+  justify-content:space-between;padding:0 12px;z-index:100;}
+.hlogo{font-family:'Orbitron',monospace;font-weight:900;font-size:.85rem;
+  color:#00d4ff;letter-spacing:.1em;text-shadow:0 0 12px rgba(0,212,255,.5);}
+#hstats{display:flex;gap:6px;}
+.hp{background:rgba(3,102,214,.12);border:1px solid #1a3a5c;border-radius:4px;
+  padding:2px 8px;font-family:'Orbitron',monospace;font-size:.58rem;color:#00d4ff;
+  letter-spacing:.06em;white-space:nowrap;}
+.hp b{color:#fff;}
+#main{position:fixed;top:48px;left:0;right:0;bottom:0;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+#cwrap{position:relative;border-radius:8px;overflow:hidden;
+  border:2px solid rgba(0,212,255,.3);
+  box-shadow:0 0 30px rgba(3,102,214,.3);}
+.cn{position:absolute;width:12px;height:12px;z-index:5;}
+.cn-tl{top:5px;left:5px;border-top:2px solid #00d4ff;border-left:2px solid #00d4ff;}
+.cn-tr{top:5px;right:5px;border-top:2px solid #00d4ff;border-right:2px solid #00d4ff;}
+.cn-bl{bottom:5px;left:5px;border-bottom:2px solid #00d4ff;border-left:2px solid #00d4ff;}
+.cn-br{bottom:5px;right:5px;border-bottom:2px solid #00d4ff;border-right:2px solid #00d4ff;}
+#gc{display:block;}
+#jswrap{display:flex;align-items:center;justify-content:center;}
+#jsc{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;}
+.scr{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+  background:rgba(4,8,14,.96);backdrop-filter:blur(8px);}
+.scr.off{display:none;}
+.st{font-family:'Orbitron',monospace;font-weight:900;
+  font-size:clamp(1.8rem,6vw,3rem);color:#00d4ff;letter-spacing:.06em;
+  text-shadow:0 0 30px rgba(0,212,255,.6);}
+.ss{font-family:'Orbitron',monospace;font-size:.65rem;color:#3a5a7a;letter-spacing:.2em;}
+.sb{background:rgba(3,102,214,.08);border:1px solid #1a3a5c;border-radius:8px;
+  padding:14px 22px;font-size:.88rem;color:rgba(232,244,255,.55);
+  line-height:1.8;text-align:center;max-width:340px;}
+.sb strong{color:#00d4ff;}
+.bp{background:#0366d6;border:none;border-radius:6px;padding:13px 38px;
+  font-family:'Orbitron',monospace;font-weight:700;font-size:.88rem;letter-spacing:.1em;
+  color:#fff;cursor:pointer;box-shadow:0 0 18px rgba(3,102,214,.4);}
+.bs{background:transparent;border:1px solid #1a3a5c;border-radius:6px;
+  padding:9px 22px;font-family:'Orbitron',monospace;font-weight:600;font-size:.68rem;
+  letter-spacing:.1em;color:#3a5a7a;cursor:pointer;}
+.lds{display:flex;gap:7px;}
+.ld{width:9px;height:9px;border-radius:50%;border:1px solid #1a3a5c;}
+.ld.done{background:#10b981;}.ld.cur{background:#00d4ff;box-shadow:0 0 7px #00d4ff;}
+</style>
+</head>
+<body>
+<div id="hdr">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="hlogo">CSK</div>
+    <div style="width:1px;height:16px;background:#1a3a5c;"></div>
+    <div style="font-family:'Orbitron',monospace;font-size:.58rem;color:#3a5a7a;letter-spacing:.15em;">TRACE RUNNER</div>
+  </div>
+  <div id="hstats">
+    <div class="hp">LVL <b id="hlv">1</b></div>
+    <div class="hp">TIME <b id="htm">0:00</b></div>
+    <div class="hp">TOTAL <b id="htot" style="color:#f59e0b">0:00</b></div>
+  </div>
+</div>
+<div id="main">
+  <div id="cwrap">
+    <div class="cn cn-tl"></div><div class="cn cn-tr"></div>
+    <div class="cn cn-bl"></div><div class="cn cn-br"></div>
+    <canvas id="gc"></canvas>
+  </div>
+  <div id="jswrap">
+    <canvas id="jsc" width="160" height="160"></canvas>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div class="scr" id="sstart">
+  <div class="ss">Computer Store Kansas Presents</div>
+  <div class="st">Trace Runner</div>
+  <div class="sb">Guide the <strong>signal ball</strong> through the circuit board maze.<br>
+    Reach the <strong style="color:#ff6b35">OUT pad</strong> to complete the circuit.<br><br>
+    <strong>Arrow keys / WASD</strong> or D-pad &nbsp;·&nbsp; Press <strong>R</strong> for new board</div>
+  <div class="lds" id="sd0"></div>
+  <button class="bp" id="bstart">▶ START GAME</button>
+  <div class="ss">computerstoreks.com · Topeka KS · (785) 267-3223</div>
+</div>
+<div class="scr off" id="swin">
+  <div class="ss">Circuit Complete</div>
+  <div class="st" style="color:#10b981">Level Clear!</div>
+  <div style="font-family:'Orbitron',monospace;font-size:2.4rem;font-weight:900;color:#f59e0b;" id="wtime">0:00</div>
+  <div id="wrating" style="font-size:1.9rem;margin:-2px 0 2px;">⭐⭐⭐</div>
+  <div style="font-family:'Orbitron',monospace;font-size:.65rem;color:#3a5a7a;letter-spacing:.07em;text-align:center;" id="wlabel"></div>
+  <div class="lds" id="sd1"></div>
+  <button class="bp" id="bnext">NEXT LEVEL ▶</button>
+  <button class="bs" id="brep">↺ Replay This Board</button>
+</div>
+<div class="scr off" id="sall">
+  <div class="ss">All Circuits Routed</div>
+  <div class="st" style="color:#f59e0b">Board Clear!</div>
+  <div id="fall-rating" style="font-size:2rem;">⭐⭐⭐</div>
+  <div style="font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:900;color:#f59e0b;" id="fall-total">0:00</div>
+  <div id="fall-summary" style="font-family:'Orbitron',monospace;font-size:.6rem;color:#3a5a7a;letter-spacing:.07em;text-align:left;line-height:2;"></div>
+  <div class="lds" id="sd2"></div>
+  <button class="bp" id="breplay">↺ Play Again</button>
+  <div class="ss">2008 SW Gage Blvd · Topeka, KS · (785) 267-3223</div>
+</div>
+
+<script>
+// ─── RNG ───────────────────────────────────────────────────────────
+function mkRng(s){
+  return function(){
+    s=s+0x6D2B79F5|0;
+    var t=Math.imul(s^s>>>15,1|s);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return((t^t>>>14)>>>0)/4294967296;
+  };
+}
+
+// ─── MAZE GEN (recursive backtracker) ──────────────────────────────
+function genMaze(W,H,rng){
+  // wall[r][c] = {r,d,l,u} = wall exists on right/down/left/up side of cell
+  // We track which WALLS exist (true = wall present, false = open passage)
+  var walls={};
+  // Init: all walls present
+  for(var r=0;r<H;r++) for(var c=0;c<W;c++)
+    walls[r+','+c]={u:true,d:true,l:true,r:true};
+  
+  var vis=[];
+  for(var r=0;r<H;r++){vis[r]=[];for(var c=0;c<W;c++)vis[r][c]=false;}
+  
+  function carve(r,c){
+    vis[r][c]=true;
+    var dirs=[[0,1,'r','l'],[0,-1,'l','r'],[1,0,'d','u'],[-1,0,'u','d']];
+    // shuffle
+    for(var i=dirs.length-1;i>0;i--){var j=Math.floor(rng()*(i+1));var tmp=dirs[i];dirs[i]=dirs[j];dirs[j]=tmp;}
+    for(var i=0;i<dirs.length;i++){
+      var dr=dirs[i][0],dc=dirs[i][1],w1=dirs[i][2],w2=dirs[i][3];
+      var nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<H&&nc>=0&&nc<W&&!vis[nr][nc]){
+        walls[r+','+c][w1]=false;
+        walls[nr+','+nc][w2]=false;
+        carve(nr,nc);
+      }
+    }
+  }
+  carve(0,0);
+  return walls;
+}
+
+// ─── LEVELS ────────────────────────────────────────────────────────
+var LEVELS=[
+  {name:'Boot Sequence', W:6, H:6},
+  {name:'Signal Path',   W:8, H:8},
+  {name:'Data Bus',      W:10,H:9},
+  {name:'Clock Domain',  W:12,H:10},
+  {name:'Full Routing',  W:13,H:11},
+  {name:'Deep Trace',    W:15,H:12},
+  {name:'Via Hell',      W:17,H:13},
+];
+var NL=LEVELS.length;
+
+// ─── GAME STATE ────────────────────────────────────────────────────
+// Per-level par times (seconds) — defines star ratings
+var PAR=[18,28,40,55,70,90,115]; // 3-star target per level
+var G={
+  lvl:0,walls:null,W:0,H:0,seed:0,
+  ball:{r:0,c:0,px:0,py:0,tx:0,ty:0,moving:false},
+  trail:[],elapsed:0,t0:0,running:false,won:false,
+  levelTimes:[],  // seconds for each completed level
+  totalPrior:0,   // sum of prior level times
+  CELL:0,OX:0,OY:0
+};
+
+var cv=document.getElementById('gc');
+var cx=cv.getContext('2d');
+
+// ─── LAYOUT ────────────────────────────────────────────────────────
+function layout(){
+  var def=LEVELS[G.lvl];
+  var avW=Math.min(window.innerWidth-14,550);
+  var avH=window.innerHeight-48-180-14;
+  var byW=Math.floor(avW/(def.W+1));
+  var byH=Math.floor(avH/(def.H+1));
+  var CELL=Math.max(26,Math.min(byW,byH,60));
+  G.CELL=CELL;
+  G.W=def.W;G.H=def.H;
+  // Canvas size: cells + 1 extra cell margin on each side for outer wall
+  var cw=(def.W+1)*CELL, ch=(def.H+1)*CELL;
+  cv.width=cw;cv.height=ch;
+  // Offset so cell (0,0) center is at (CELL, CELL)... actually:
+  // cell (r,c) center = (OX + c*CELL + CELL/2, OY + r*CELL + CELL/2)
+  // with OX=OY=CELL/2 for half-cell border
+  G.OX=CELL/2;G.OY=CELL/2;
+}
+
+function cellPx(r,c){
+  return{x:G.OX+c*G.CELL+G.CELL/2, y:G.OY+r*G.CELL+G.CELL/2};
+}
+
+// ─── DRAW ─────────────────────────────────────────────────────────
+/*
+  THE CORRECT APPROACH FOR REFERENCE-LIKE MAZE:
+  
+  The reference has walls that look like smooth rounded TUBES.
+  
+  Solution: Draw walls as thick lines with round caps and round joins.
+  
+  For each WALL that exists between two adjacent cells, draw a thick
+  rounded line BETWEEN those two cells' corners.
+  
+  The maze walls sit on a GRID of lines. Each wall segment is one
+  unit along a grid edge. We draw:
+  - The outer border (a rounded rect around the whole maze)
+  - Each interior wall segment as a thick rounded line
+  
+  Wall grid: cell corners are at integer positions.
+  Corner (r,c) is at pixel (OX + c*CELL, OY + r*CELL).
+  
+  A horizontal wall between cell (r,c) top edge goes from
+  corner (r,c) to corner (r,c+1).
+  
+  A vertical wall on cell (r,c) left edge goes from
+  corner (r,c) to corner (r+1,c).
+*/
+
+// Wall tube color palette (PCB green solder mask over copper)
+var WALL_COLOR='#15b87a';
+var WALL_HIGHLIGHT='#1fd48c';
+var WALL_SHADOW='#0a7a50';
+var BOARD_BG='#040b14';
+
+function draw(){
+  if(!G.walls)return;
+  var CELL=G.CELL,OX=G.OX,OY=G.OY,W=G.W,H=G.H;
+  var cw=cv.width,ch=cv.height;
+  
+  // ── Background: dark PCB board ──
+  cx.fillStyle=BOARD_BG;
+  cx.fillRect(0,0,cw,ch);
+  
+  // Clean dark board — no grid texture, just like the reference's plain wood board
+  
+  // ── WALL DRAWING ──
+  // Reference analysis: walls are ~42% of cell, channels ~58% — open and airy
+  var WT=Math.round(CELL*0.42);
+
+  cx.lineCap='round';
+  cx.lineJoin='round';
+
+  function cornerPx(row,col){
+    return{x:OX+col*CELL, y:OY+row*CELL};
+  }
+
+  // Shadow pass — subtle depth, offset 1px down-right
+  cx.strokeStyle=WALL_SHADOW;
+  cx.lineWidth=WT;
+  drawAllWalls(cornerPx, W, H, 1, 1);
+
+  // Main wall — clean solid color, NO glow, NO shadow blur
+  cx.strokeStyle=WALL_COLOR;
+  cx.lineWidth=WT;
+  drawAllWalls(cornerPx, W, H, 0, 0);
+
+  // Thin highlight line along top-left edge of tube (3D raised feel)
+  cx.strokeStyle=WALL_HIGHLIGHT;
+  cx.lineWidth=Math.max(1, Math.round(WT*0.18));
+  drawAllWalls(cornerPx, W, H, -WT*0.16, -WT*0.16);
+}
+
+function drawAllWalls(cornerPx, W, H, ox, oy){
+  var CELL=G.CELL;
+  
+  function seg(r1,c1,r2,c2){
+    var a=cornerPx(r1,c1), b=cornerPx(r2,c2);
+    cx.beginPath();
+    cx.moveTo(a.x+ox,a.y+oy);
+    cx.lineTo(b.x+ox,b.y+oy);
+    cx.stroke();
+  }
+  
+  // Outer border walls
+  // Top edge: corners (0,0)→(0,1)→...→(0,W)
+  seg(0,0,0,W);
+  // Bottom edge
+  seg(H,0,H,W);
+  // Left edge
+  seg(0,0,H,0);
+  // Right edge
+  seg(0,W,H,W);
+  
+  // Interior walls
+  // For each cell (r,c), check its RIGHT wall (vertical segment at col c+1, rows r to r+1)
+  // and its BOTTOM wall (horizontal segment at row r+1, cols c to c+1)
+  for(var r=0;r<H;r++){
+    for(var c=0;c<W;c++){
+      var cell=G.walls[r+','+c];
+      // Right wall of cell (r,c) = vertical segment from (r,c+1) to (r+1,c+1)
+      if(c<W-1 && cell.r){
+        seg(r,c+1,r+1,c+1);
+      }
+      // Bottom wall of cell (r,c) = horizontal segment from (r+1,c) to (r+1,c+1)
+      if(r<H-1 && cell.d){
+        seg(r+1,c,r+1,c+1);
+      }
+    }
+  }
+}
+
+function drawOverlays(){
+  var CELL=G.CELL;
+  
+  // Trail
+  if(G.trail.length>1){
+    cx.lineCap='round';cx.lineJoin='round';
+    for(var i=1;i<G.trail.length;i++){
+      var a=G.trail[i-1],b=G.trail[i];
+      var pa=cellPx(a.r,a.c),pb=cellPx(b.r,b.c);
+      var alpha=0.15+(i/G.trail.length)*0.5;
+      cx.strokeStyle='rgba(0,212,255,'+alpha+')';
+      cx.lineWidth=Math.max(2,CELL*0.22);
+      cx.beginPath();cx.moveTo(pa.x,pa.y);cx.lineTo(pb.x,pb.y);cx.stroke();
+    }
+  }
+  
+  // Start pad
+  var sp=cellPx(0,0);
+  drawPad(sp.x,sp.y,CELL*0.22,'#10b981','rgba(16,185,129,','IN');
+  var ep=cellPx(G.H-1,G.W-1);
+  drawPad(ep.x,ep.y,CELL*0.22,'#ff6b35','rgba(255,107,53,','OUT');
+  
+  // Ball
+  var bx=G.ball.px,by=G.ball.py,br=CELL*0.22;
+  var glow=cx.createRadialGradient(bx,by,0,bx,by,br*3.5);
+  glow.addColorStop(0,'rgba(0,212,255,0.5)');
+  glow.addColorStop(1,'rgba(0,212,255,0)');
+  cx.beginPath();cx.arc(bx,by,br*3.5,0,Math.PI*2);
+  cx.fillStyle=glow;cx.fill();
+  
+  var sph=cx.createRadialGradient(bx-br*.3,by-br*.35,0,bx,by,br);
+  sph.addColorStop(0,'#c8f8ff');
+  sph.addColorStop(0.4,'#00d4ff');
+  sph.addColorStop(0.8,'#0055aa');
+  sph.addColorStop(1,'#001a44');
+  cx.beginPath();cx.arc(bx,by,br,0,Math.PI*2);
+  cx.fillStyle=sph;cx.shadowColor='#00d4ff';cx.shadowBlur=14;cx.fill();cx.shadowBlur=0;
+  cx.beginPath();cx.arc(bx-br*.28,by-br*.32,br*.28,0,Math.PI*2);
+  cx.fillStyle='rgba(255,255,255,0.8)';cx.fill();
+}
+
+function drawPad(x,y,r,col,glow,label){
+  var pg=cx.createRadialGradient(x,y,0,x,y,r*4);
+  pg.addColorStop(0,glow+'0.35)');pg.addColorStop(1,glow+'0)');
+  cx.beginPath();cx.arc(x,y,r*4,0,Math.PI*2);cx.fillStyle=pg;cx.fill();
+  cx.beginPath();cx.arc(x,y,r,0,Math.PI*2);
+  cx.strokeStyle=col;cx.lineWidth=2;cx.shadowColor=col;cx.shadowBlur=12;cx.stroke();cx.shadowBlur=0;
+  cx.beginPath();cx.arc(x,y,r*.38,0,Math.PI*2);cx.fillStyle=col;cx.fill();
+  if(G.CELL>=28){
+    var fs=Math.max(6,Math.round(G.CELL*0.15));
+    cx.font='700 '+fs+'px Orbitron,monospace';
+    cx.fillStyle=col;cx.textAlign='center';cx.textBaseline='top';
+    cx.shadowColor=col;cx.shadowBlur=6;
+    cx.fillText(label,x,y+r+2);cx.shadowBlur=0;
+  }
+}
+
+// ─── GAME LOOP ────────────────────────────────────────────────────
+var SPD=9;
+function loop(ts){
+  var b=G.ball;
+  if(b.moving){
+    var dx=b.tx-b.px,dy=b.ty-b.py,d=Math.hypot(dx,dy);
+    if(d<=SPD){b.px=b.tx;b.py=b.ty;b.moving=false;}
+    else{b.px+=dx/d*SPD;b.py+=dy/d*SPD;}
+  }
+  if(G.running&&!G.won) G.elapsed=(Date.now()-G.t0)/1000;
+  updateHUD();
+  draw();
+  drawOverlays();
+  requestAnimationFrame(loop);
+}
+
+// ─── MOVE ────────────────────────────────────────────────────────
+function move(dr,dc){
+  if(!G.running||G.won||G.ball.moving)return;
+  var cell=G.walls[G.ball.r+','+G.ball.c];
+  var ok=(dr===-1&&!cell.u)||(dr===1&&!cell.d)||(dc===-1&&!cell.l)||(dc===1&&!cell.r);
+  if(!ok)return;
+  G.ball.r+=dr;G.ball.c+=dc;
+  G.trail.push({r:G.ball.r,c:G.ball.c});
+  if(G.trail.length>300)G.trail.shift();
+  var p=cellPx(G.ball.r,G.ball.c);
+  G.ball.tx=p.x;G.ball.ty=p.y;G.ball.moving=true;
+  if(G.ball.r===G.H-1&&G.ball.c===G.W-1){G.won=true;G.running=false;setTimeout(showWin,600);}
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+function initLevel(lvl,sameSeed){
+  G.lvl=lvl;
+  if(!sameSeed)G.seed=Math.floor(Math.random()*0xffffffff);
+  var def=LEVELS[lvl];
+  G.walls=genMaze(def.W,def.H,mkRng(G.seed));
+  layout();
+  var sp=cellPx(0,0);
+  G.ball={r:0,c:0,px:sp.x,py:sp.y,tx:sp.x,ty:sp.y,moving:false};
+  G.trail=[{r:0,c:0}];
+  G.elapsed=0;G.t0=Date.now();G.running=true;G.won=false;
+  updateDots();updateHUD();
+}
+
+function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function stars(t,par){
+  if(t<=par)return'⭐⭐⭐';
+  if(t<=par*1.6)return'⭐⭐';
+  if(t<=par*2.5)return'⭐';
+  return'🔧';
+}
+function updateHUD(){
+  document.getElementById('hlv').textContent=G.lvl+1;
+  document.getElementById('htm').textContent=fmt(G.elapsed);
+  document.getElementById('htot').textContent=fmt(G.totalPrior+G.elapsed);
+}
+
+function setDots(id){
+  var el=document.getElementById(id);el.innerHTML='';
+  for(var i=0;i<NL;i++){
+    var d=document.createElement('div');
+    d.className='ld'+(i<G.lvl?' done':i===G.lvl?' cur':'');
+    el.appendChild(d);
+  }
+}
+function updateDots(){['sd0','sd1','sd2'].forEach(setDots);}
+
+function showOnly(id){
+  ['sstart','swin','sall'].forEach(function(s){
+    document.getElementById(s).classList.toggle('off',s!==id);
+  });
+}
+function hideAll(){['sstart','swin','sall'].forEach(function(s){document.getElementById(s).classList.add('off');});}
+
+function showWin(){
+  G.levelTimes[G.lvl]=G.elapsed;
+  updateDots();
+  var t=G.elapsed, par=PAR[G.lvl];
+  document.getElementById('wtime').textContent=fmt(t);
+  document.getElementById('wrating').textContent=stars(t,par);
+  var parStr=t<=par?'Par: '+fmt(par)+' — Crushed it!':t<=par*1.6?'Par: '+fmt(par)+' — Nice run!':t<=par*2.5?'Par: '+fmt(par)+' — Keep practicing':'Par: '+fmt(par)+' — Don\'t give up!';
+  document.getElementById('wlabel').textContent='LVL '+(G.lvl+1)+' — '+LEVELS[G.lvl].name+' · '+parStr;
+  if(G.lvl>=NL-1){showFinal();showOnly('sall');}else showOnly('swin');
+}
+function showFinal(){
+  var total=0;
+  for(var i=0;i<G.levelTimes.length;i++)total+=G.levelTimes[i]||0;
+  // Overall rating based on sum of all pars
+  var totalPar=0;for(var i=0;i<NL;i++)totalPar+=PAR[i];
+  var overallStars=stars(total,totalPar);
+  document.getElementById('fall-rating').textContent=overallStars;
+  document.getElementById('fall-total').textContent='Total: '+fmt(total);
+  // Build per-level breakdown
+  var lines='';
+  for(var i=0;i<G.levelTimes.length;i++){
+    var t=G.levelTimes[i]||0, p=PAR[i];
+    lines+='LVL '+(i+1)+' '+LEVELS[i].name+': '+fmt(t)+' '+stars(t,p)+'\n';
+  }
+  document.getElementById('fall-summary').style.whiteSpace='pre';
+  document.getElementById('fall-summary').textContent=lines;
+}
+
+// ─── INPUT ───────────────────────────────────────────────────────
+document.addEventListener('keydown',function(e){
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();
+  switch(e.key){
+    case'ArrowUp':   case'w':case'W':move(-1,0);break;
+    case'ArrowDown': case's':case'S':move(1,0);break;
+    case'ArrowLeft': case'a':case'A':move(0,-1);break;
+    case'ArrowRight':case'd':case'D':move(0,1);break;
+    case'r':case'R':
+      if(!document.getElementById('sstart').classList.contains('off'))return;
+      hideAll();initLevel(G.lvl,false);break;
+  }
+});
+
+// ─── JOYSTICK ─────────────────────────────────────────────────────
+var JS={
+  canvas:null,ctx:null,
+  cx:80,cy:80,  // center
+  R:68,         // outer ring radius
+  KR:26,        // knob radius
+  active:false,
+  kx:80,ky:80,  // knob position
+  moveIv:null,
+  lastDir:null
+};
+
+function jsInit(){
+  JS.canvas=document.getElementById('jsc');
+  JS.ctx=JS.canvas.getContext('2d');
+  jsDraw();
+  JS.canvas.addEventListener('pointerdown',jsDown);
+  JS.canvas.addEventListener('pointermove',jsMove2);
+  JS.canvas.addEventListener('pointerup',jsUp);
+  JS.canvas.addEventListener('pointercancel',jsUp);
+  JS.canvas.addEventListener('contextmenu',function(e){e.preventDefault();});
+}
+
+function jsDir(kx,ky){
+  var dx=kx-JS.cx,dy=ky-JS.cy;
+  if(Math.hypot(dx,dy)<12)return null;
+  if(Math.abs(dx)>Math.abs(dy))return dx>0?[0,1]:[0,-1];
+  return dy>0?[1,0]:[-1,0];
+}
+
+function jsDown(e){
+  e.preventDefault();
+  JS.canvas.setPointerCapture(e.pointerId);
+  JS.active=true;
+  jsMove(e.offsetX,e.offsetY);
+}
+function jsMove2(e){
+  if(!JS.active)return;
+  e.preventDefault();
+  jsMove(e.offsetX,e.offsetY);
+}
+function jsMove(ox,oy){
+  var dx=ox-JS.cx,dy=oy-JS.cy,dist=Math.hypot(dx,dy);
+  var maxK=JS.R-JS.KR-4;
+  if(dist>maxK){dx=dx/dist*maxK;dy=dy/dist*maxK;}
+  JS.kx=JS.cx+dx;JS.ky=JS.cy+dy;
+  var dir=jsDir(JS.kx,JS.ky);
+  if(dir&&(dir[0]!=(JS.lastDir&&JS.lastDir[0])||dir[1]!=(JS.lastDir&&JS.lastDir[1]))){
+    clearInterval(JS.moveIv);
+    JS.lastDir=dir;
+    move(dir[0],dir[1]);
+    JS.moveIv=setInterval(function(){if(JS.lastDir)move(JS.lastDir[0],JS.lastDir[1]);},150);
+  }
+  jsDraw();
+}
+function jsUp(e){
+  JS.active=false;JS.kx=JS.cx;JS.ky=JS.cy;JS.lastDir=null;
+  clearInterval(JS.moveIv);JS.moveIv=null;
+  jsDraw();
+}
+
+function jsDraw(){
+  var c=JS.ctx,cx=JS.cx,cy=JS.cy,R=JS.R,kx=JS.kx,ky=JS.ky,KR=JS.KR;
+  c.clearRect(0,0,160,160);
+
+  // Outer ring base
+  c.beginPath();c.arc(cx,cy,R,0,Math.PI*2);
+  c.fillStyle='rgba(10,21,32,0.85)';c.fill();
+  c.strokeStyle='#1a3a5c';c.lineWidth=2;c.stroke();
+
+  // Direction zones — subtle wedges
+  var dirs=[[0,-1,'▲'],[ 1,0,'▶'],[ 0,1,'▼'],[-1,0,'◀']];
+  // actually: up=top, right=right, down=bottom, left=left
+  // angles: up=-PI/2, right=0, down=PI/2, left=PI
+  var wedgeAngles=[[-Math.PI/2-Math.PI/4,-Math.PI/2+Math.PI/4],
+                   [-Math.PI/4, Math.PI/4],
+                   [Math.PI/4, 3*Math.PI/4],
+                   [3*Math.PI/4, 5*Math.PI/4]];
+  var activeDir=JS.active?jsDir(kx,ky):null;
+  var dirMap=[[[-1,0]],[[ 0,1]],[[ 1,0]],[[ 0,-1]]]; // up right down left
+  // wedge order: up right down left
+  for(var i=0;i<4;i++){
+    var isActive=activeDir&&(
+      (i===0&&activeDir[0]===-1)||
+      (i===1&&activeDir[1]===1)||
+      (i===2&&activeDir[0]===1)||
+      (i===3&&activeDir[1]===-1)
+    );
+    c.beginPath();
+    c.moveTo(cx,cy);
+    c.arc(cx,cy,R-3,wedgeAngles[i][0],wedgeAngles[i][1]);
+    c.closePath();
+    c.fillStyle=isActive?'rgba(0,212,255,0.18)':'rgba(3,102,214,0.06)';
+    c.fill();
+  }
+
+  // Tick marks at N/S/E/W
+  var tickDirs=[[0,-1],[1,0],[0,1],[-1,0]];
+  for(var i=0;i<4;i++){
+    var tx=cx+tickDirs[i][0]*(R-8),ty=cy+tickDirs[i][1]*(R-8);
+    var tx2=cx+tickDirs[i][0]*(R-16),ty2=cy+tickDirs[i][1]*(R-16);
+    c.beginPath();c.moveTo(tx,ty);c.lineTo(tx2,ty2);
+    c.strokeStyle='rgba(0,212,255,0.3)';c.lineWidth=2;c.stroke();
+  }
+
+  // Outer ring stroke
+  c.beginPath();c.arc(cx,cy,R,0,Math.PI*2);
+  c.strokeStyle=JS.active?'rgba(0,212,255,0.5)':'rgba(0,212,255,0.2)';
+  c.lineWidth=1.5;c.stroke();
+
+  // Inner dead-zone circle
+  c.beginPath();c.arc(cx,cy,14,0,Math.PI*2);
+  c.strokeStyle='rgba(0,212,255,0.12)';c.lineWidth=1;c.stroke();
+
+  // Knob shadow
+  c.beginPath();c.arc(kx+2,ky+3,KR,0,Math.PI*2);
+  c.fillStyle='rgba(0,0,0,0.4)';c.fill();
+
+  // Knob body
+  var kg=c.createRadialGradient(kx-KR*.25,ky-KR*.3,0,kx,ky,KR);
+  kg.addColorStop(0,JS.active?'#60e0ff':'#3ab8d8');
+  kg.addColorStop(0.5,JS.active?'#0099cc':'#0077aa');
+  kg.addColorStop(1,'#003355');
+  c.beginPath();c.arc(kx,ky,KR,0,Math.PI*2);
+  c.fillStyle=kg;
+  if(JS.active){c.shadowColor='rgba(0,212,255,0.6)';c.shadowBlur=12;}
+  c.fill();c.shadowBlur=0;
+
+  // Knob specular
+  c.beginPath();c.arc(kx-KR*.22,ky-KR*.28,KR*.3,0,Math.PI*2);
+  c.fillStyle='rgba(255,255,255,0.25)';c.fill();
+
+  // Knob ring
+  c.beginPath();c.arc(kx,ky,KR,0,Math.PI*2);
+  c.strokeStyle=JS.active?'rgba(0,212,255,0.7)':'rgba(0,212,255,0.3)';
+  c.lineWidth=1.5;c.stroke();
+}
+
+var sw0=null;
+cv.addEventListener('pointerdown',function(e){sw0={x:e.clientX,y:e.clientY};});
+cv.addEventListener('pointerup',function(e){
+  if(!sw0)return;
+  var dx=e.clientX-sw0.x,dy=e.clientY-sw0.y;sw0=null;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<12)return;
+  if(Math.abs(dx)>Math.abs(dy))move(0,dx>0?1:-1);else move(dy>0?1:-1,0);
+});
+
+document.getElementById('bstart').addEventListener('click',function(){G.levelTimes=[];G.totalPrior=0;hideAll();initLevel(0,false);});
+document.getElementById('bnext').addEventListener('click',function(){G.totalPrior+=(G.levelTimes[G.lvl]||0);hideAll();initLevel(G.lvl+1,false);});
+document.getElementById('brep').addEventListener('click',function(){hideAll();initLevel(G.lvl,true);});
+document.getElementById('breplay').addEventListener('click',function(){G.levelTimes=[];G.totalPrior=0;hideAll();initLevel(0,false);});
+
+window.addEventListener('resize',function(){
+  if(!G.walls)return;
+  layout();
+  var p=cellPx(G.ball.r,G.ball.c);
+  G.ball.px=p.x;G.ball.py=p.y;G.ball.tx=p.x;G.ball.ty=p.y;
+});
+
+// ─── BOOT ────────────────────────────────────────────────────────
+// Pre-render background maze on start screen
+G.lvl=0;G.seed=Math.floor(Math.random()*0xffffffff);
+var def=LEVELS[0];G.W=def.W;G.H=def.H;
+G.walls=genMaze(G.W,G.H,mkRng(G.seed));
+layout();
+var bsp=cellPx(0,0);
+G.ball={r:0,c:0,px:bsp.x,py:bsp.y,tx:bsp.x,ty:bsp.y,moving:false};
+G.trail=[];
+updateDots();
+jsInit();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
